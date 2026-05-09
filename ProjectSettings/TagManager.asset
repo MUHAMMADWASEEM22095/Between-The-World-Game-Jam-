@@ -6,6 +6,11 @@ TagManager:
   tags:
   - CinemachineTarget
   - Blocker
+  - Lock
+  - Gridbox
+  - Key
+  - RightNode
+  - Switch
   layers:
   - Default
   - TransparentFX
