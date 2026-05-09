@@ -1,3 +1,4 @@
+using StarterAssets;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,6 +10,7 @@ public class PlayerInteraction : MonoBehaviour
     public PlayerInventory inventory;
 
     public Transform playerCamera;
+    private StarterAssetsInputs _inputs;
 
     [Header("Gridbox Settings")]
     public GameObject BoxLid;
@@ -25,13 +27,20 @@ public class PlayerInteraction : MonoBehaviour
     private Color normalColor = Color.white;
     public GameObject interactPanel;
 
+    [Header("Circuit Puzzle Settings")]
+    public GameObject inspectButton;
+    public GameObject circuitPuzzlePanel;
+
     private void Start()
     {
+        _inputs = GetComponent<StarterAssetsInputs>();
         if (BoxLid != null)
         {
             closedRotation = BoxLid.transform.localRotation;
         }
         interactPanel.SetActive(false);
+        circuitPuzzlePanel.SetActive(false);
+        inspectButton.SetActive(false);
     }
     void Update()
     {
@@ -41,6 +50,11 @@ public class PlayerInteraction : MonoBehaviour
         {
             PerformInteraction();
         }
+
+        if(Input.GetKeyDown(KeyCode.E) && inspectButton.activeSelf)
+        {
+            OnInspectButtonClicked();
+        }
     }
 
     void UpdateReticle()
@@ -49,7 +63,7 @@ public class PlayerInteraction : MonoBehaviour
 
         if (Physics.Raycast(ray, out RaycastHit hit, interactRange))
         {
-            if (hit.collider.CompareTag("Key") || hit.collider.CompareTag("Lock") || hit.collider.CompareTag("Gridbox"))
+            if (hit.collider.CompareTag("Key") || hit.collider.CompareTag("Lock") || hit.collider.CompareTag("Gridbox") || hit.collider.CompareTag("Switch"))
             {
                 interactPanel.SetActive(true);
                 reticle.color = interactColor;
@@ -97,6 +111,20 @@ public class PlayerInteraction : MonoBehaviour
                     ToggleGridbox();
                 }
             }
+            if (hit.collider.CompareTag("Switch"))
+            {
+                Switch handle = hit.collider.GetComponentInChildren<Switch>();
+
+                if (handle != null)
+                {
+                    handle.ToggleSwitch();
+                    Debug.Log("Switch Toggled via PlayerInteraction!");
+                }
+                else
+                {
+                    Debug.LogError("SwitchHandle script switch object par nahi mili!");
+                }
+            }
         }
         
     }
@@ -123,8 +151,51 @@ public class PlayerInteraction : MonoBehaviour
     {
         isOpen = !isOpen;
         Quaternion targetRot = isOpen ? Quaternion.Euler(openAngle, 0, 0) * closedRotation : closedRotation;
+        inspectButton.SetActive(isOpen);
+        if (!isOpen) circuitPuzzlePanel.SetActive(false);
 
         StartCoroutine(AnimateLid(targetRot));
+    }
+    public void OnInspectButtonClicked()
+    {
+        circuitPuzzlePanel.SetActive(true);
+        inspectButton.SetActive(false);
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        if (GetComponent<StarterAssets.FirstPersonController>() != null)
+        {
+            GetComponent<StarterAssets.FirstPersonController>().enabled = false;
+        }
+        _inputs.cursorLocked = false;
+        _inputs.cursorInputForLook = false;
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+        GetComponent<FirstPersonController>().enabled = false;
+    }
+    public void ClosePuzzlePanel()
+    {
+        circuitPuzzlePanel.SetActive(false);
+        inspectButton.SetActive(false);
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        if (GetComponent<StarterAssets.FirstPersonController>() != null)
+        {
+            GetComponent<StarterAssets.FirstPersonController>().enabled = true;
+        }
+        if (GetComponent<UnityEngine.InputSystem.PlayerInput>() != null)
+        {
+            GetComponent<UnityEngine.InputSystem.PlayerInput>().enabled = true;
+        }
+        _inputs.cursorLocked = true;
+        _inputs.cursorInputForLook = true;
+    }
+
+    public void ResetGame()
+    {
+        //inventory.hasCircuitKey = false;
+        Debug.Log("Resetting Game due to wrong wiring...");
+        PuzzleManager.instance.ResetConnections();
+
     }
 
     private void OnDrawGizmos()
