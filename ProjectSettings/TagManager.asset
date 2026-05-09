@@ -5,9 +5,7 @@ TagManager:
   serializedVersion: 2
   tags:
   - CinemachineTarget
-  - Lock
-  - Gridbox
-  - Key
+  - Blocker
   layers:
   - Default
   - TransparentFX
